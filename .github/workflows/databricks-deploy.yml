@@ -23,17 +23,19 @@ jobs:
         run: |
           pip install databricks-cli
 
-      - name: Configure Databricks Credentials
-        run: |
-          echo "[DEFAULT]" > ~/.databrickscfg
-          echo "host = ${{ secrets.DATABRICKS_HOST }}" >> ~/.databrickscfg
-          echo "token = ${{ secrets.DATABRICKS_TOKEN }}" >> ~/.databrickscfg
-
       - name: Deploy All Sub-folders to User Workspace Path
+        env:
+          DATABRICKS_HOST: ${{ secrets.DATABRICKS_HOST }}
+          DATABRICKS_TOKEN: ${{ secrets.DATABRICKS_TOKEN }}
         run: |
+          # Databricks Config file create karein
+          echo "[DEFAULT]" > ~/.databrickscfg
+          echo "host = $DATABRICKS_HOST" >> ~/.databrickscfg
+          echo "token = $DATABRICKS_TOKEN" >> ~/.databrickscfg
+
           TARGET_PATH="/Users/osamahashmi28@gmail.com/Ecommerce_Pipeline/medalion_processing"
           
-          # Target Folder create karein
+          # Workspace Directory create karein
           databricks workspace mkdirs "$TARGET_PATH" || true
           
           # Complete src directory sync karein
