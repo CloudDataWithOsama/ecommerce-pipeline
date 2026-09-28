@@ -1,48 +1,42 @@
-name: Databricks CI/CD Deployment
+name: Deploy Medallion Pipelines to Databricks
 
 on:
   push:
     branches:
       - main
-  pull_request:
-    branches:
-      - main
+    paths:
+      - 'src/**'
 
 jobs:
-  deploy-notebook:
-    name: Deploy Gold Layer Notebook
+  deploy:
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v3
+      - name: Checkout Code
+        uses: actions/checkout@v4
 
-      - name: Setup Python
-        uses: actions/setup-python@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
         with:
-          python-version: '3.9'
+          python-version: '3.10'
 
       - name: Install Databricks CLI
         run: |
           pip install databricks-cli
 
-      - name: Configure Databricks Authentication
+      - name: Deploy All Sub-folders to User Workspace Path
+        env:
+          DATABRICKS_HOST: ${{ secrets.DATABRICKS_HOST }}
+          DATABRICKS_TOKEN: ${{ secrets.DATABRICKS_TOKEN }}
         run: |
-          echo "[DEFAULT]" > ~/.databrickscfg
-          echo "host = ${{ secrets.DATABRICKS_HOST }}" >> ~/.databrickscfg
-          echo "token = ${{ secrets.DATABRICKS_TOKEN }}" >> ~/.databrickscfg
-
-      - name: Deploy Notebook to Workspace
-        run: |
-          # Workspace mein folder create karein (agar pehle se nahi hai)
-          databricks workspace mkdirs /Shared/ecommerce_project || true
+          TARGET_PATH="/Users/osamahashmi28@gmail.com/Ecommerce_Pipeline/medalion_processing"
           
-          # Jupyter Notebook format ko Databricks mein import/overwrite karein
-          databricks workspace import \
-            --format JUPYTER \
-            --language PYTHON \
+          # Target Folder create karein agar na ho
+          databricks workspace mkdirs "$TARGET_PATH" || true
+          
+          # Complete src directory sync karein
+          databricks workspace import_dir \
             --overwrite \
-            ./src/gold_layer_pipeline.ipynb \
-            /Shared/ecommerce_project/gold_layer_pipeline
-            
-          echo "Notebook successfully deployed to Databricks Workspace!"
+            ./src \
+            "$TARGET_PATH"
+          
+          echo "Successfully synced to $TARGET_PATH"
