@@ -1,0 +1,48 @@
+name: Databricks CI/CD Deployment
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  deploy-notebook:
+    name: Deploy Gold Layer Notebook
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.9'
+
+      - name: Install Databricks CLI
+        run: |
+          pip install databricks-cli
+
+      - name: Configure Databricks Authentication
+        run: |
+          echo "[DEFAULT]" > ~/.databrickscfg
+          echo "host = ${{ secrets.DATABRICKS_HOST }}" >> ~/.databrickscfg
+          echo "token = ${{ secrets.DATABRICKS_TOKEN }}" >> ~/.databrickscfg
+
+      - name: Deploy Notebook to Workspace
+        run: |
+          # Workspace mein folder create karein (agar pehle se nahi hai)
+          databricks workspace mkdirs /Shared/ecommerce_project || true
+          
+          # Jupyter Notebook format ko Databricks mein import/overwrite karein
+          databricks workspace import \
+            --format JUPYTER \
+            --language PYTHON \
+            --overwrite \
+            ./src/gold_layer_pipeline.ipynb \
+            /Shared/ecommerce_project/gold_layer_pipeline
+            
+          echo "Notebook successfully deployed to Databricks Workspace!"
