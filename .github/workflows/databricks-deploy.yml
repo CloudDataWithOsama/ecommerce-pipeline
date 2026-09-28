@@ -6,6 +6,8 @@ on:
       - main
     paths:
       - 'src/**'
+      - '.github/workflows/**'
+  workflow_dispatch: # For "Run workflow" button on GitHub UI
 
 jobs:
   deploy:
