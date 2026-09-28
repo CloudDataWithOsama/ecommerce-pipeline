@@ -4,10 +4,11 @@ on:
   push:
     branches:
       - main
+      - dev
     paths:
       - 'src/**'
       - '.github/workflows/**'
-  workflow_dispatch: # For "Run workflow" button on GitHub UI
+  workflow_dispatch:
 
 jobs:
   deploy:
@@ -25,18 +26,26 @@ jobs:
         run: |
           pip install databricks-cli
 
-      - name: Deploy All Sub-folders to User Workspace Path
-        env:
-          DATABRICKS_HOST: ${{ secrets.DATABRICKS_HOST }}
-          DATABRICKS_TOKEN: ${{ secrets.DATABRICKS_TOKEN }}
+      - name: Deploy Sub-folders Based on Branch
         run: |
-          # Databricks Config file create karein
+          # Credentials setup
           echo "[DEFAULT]" > ~/.databrickscfg
-          echo "host = $DATABRICKS_HOST" >> ~/.databrickscfg
-          echo "token = $DATABRICKS_TOKEN" >> ~/.databrickscfg
+          echo "host = ${{ secrets.DATABRICKS_HOST }}" >> ~/.databrickscfg
+          echo "token = ${{ secrets.DATABRICKS_TOKEN }}" >> ~/.databrickscfg
 
-          TARGET_PATH="/Users/osamahashmi28@gmail.com/Ecommerce_Pipeline/medalion_processing"
+          # Detect active branch
+          BRANCH_NAME="${GITHUB_REF_NAME}"
           
+          if [ "$BRANCH_NAME" == "main" ]; then
+            ENV="prod"
+          else
+            ENV="dev"
+          fi
+
+          TARGET_PATH="/Users/osamahashmi28@gmail.com/Ecommerce_Pipeline/${ENV}/medalion_processing"
+          
+          echo "Deploying branch '${BRANCH_NAME}' to environment '${ENV}' at path: ${TARGET_PATH}"
+
           # Workspace Directory create karein
           databricks workspace mkdirs "$TARGET_PATH" || true
           
